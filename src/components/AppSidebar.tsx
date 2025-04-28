@@ -81,7 +81,7 @@ const AppSidebar = () => {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
-                    active={location.pathname === item.url}
+                    isActive={location.pathname === item.url}
                   >
                     <Link to={item.url} className="flex items-center">
                       <item.icon className="mr-2 h-5 w-5" />
@@ -103,7 +103,7 @@ const AppSidebar = () => {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
                       asChild
-                      active={location.pathname === item.url}
+                      isActive={location.pathname === item.url}
                     >
                       <Link to={item.url} className="flex items-center">
                         <item.icon className="mr-2 h-5 w-5" />
@@ -131,7 +131,7 @@ const AppSidebar = () => {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
                       asChild
-                      active={location.pathname === item.url}
+                      isActive={location.pathname === item.url}
                     >
                       <Link to={item.url} className="flex items-center">
                         <item.icon className="mr-2 h-5 w-5" />
