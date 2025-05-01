@@ -1,73 +1,134 @@
-# Welcome to your Lovable project
 
-## Project info
+# 📚 Community Hub — MERN Stack Project
 
-**URL**: https://lovable.dev/projects/9a75977a-b5dc-46f4-8c74-53480437e9f1
+A full-stack web application that serves as a **community hub** for discovering educational content, interacting with a personalized feed, and earning **credit points** through user engagement. Built with the **MERN stack**: MongoDB, Express.js, React.js, and Node.js.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🔍 Features
 
-**Use Lovable**
+### 1. 🔐 User Authentication
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9a75977a-b5dc-46f4-8c74-53480437e9f1) and start prompting.
+- Secure registration & login with **JWT tokens**
+- Persistent sessions with token verification
 
-Changes made via Lovable will be committed automatically to this repo.
+### 2. 💳 Credit Points System
 
-**Use your preferred IDE**
+- **Earn credits** for:
+  - Watching content
+  - Engaging (e.g., liking, saving, sharing)
+- **Spend credits** on:
+  - Unlocking premium resources or access to exclusive events
+- **Transaction history**:
+  - Timestamped logs
+  - Description of each credit action
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 3. 📰 Feed Aggregator
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Aggregates content from **Twitter**, **Reddit**, and **LinkedIn**
+- Content displayed as **cards** with:
+  - Title
+  - Source platform
+  - Preview snippet
+- User Interactions:
+  - ✅ Save for later
+  - 🔁 Share
+  - 🚩 Report (flagged for admin review)
 
-Follow these steps:
+### 4. 🛠️ Admin/Moderator Panel
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Review and manage flagged content
+- User moderation tools (suspend, warn, delete)
+- Dashboard with stats:
+  - Most saved/shared content
+  - Top contributors
+  - Report trends
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 5. 🚀 Deployment
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Backend**: Node.js + Express.js API on **Google Cloud Platform (GCP)**
+- **Frontend**: React.js + Tailwind CSS, deployed on **Firebase** or **GCP**
+- **Database**: MongoDB Atlas (or self-hosted on GCP)
+- Stores:
+  - User data & preferences
+  - Content metadata
+  - Credit logs and engagement history
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## 🧰 Tech Stack
+
+| Layer         | Technology                |
+|---------------|---------------------------|
+| Frontend      | React.js, Tailwind CSS    |
+| Backend       | Node.js, Express.js       |
+| Database      | MongoDB                   |
+| Authentication| JSON Web Tokens (JWT)     |
+| Deployment    | Firebase / GCP            |
+| APIs Used     | Twitter, Reddit, LinkedIn |
+
+---
+
+## 📁 Folder Structure (Suggested)
+
+```
+/client
+  /src
+    /components
+    /pages
+    /services
+    App.js
+    index.js
+
+/server
+  /controllers
+  /models
+  /routes
+  /middleware
+  app.js
+  config.js
+
+.env
+README.md
+```
+
+---
+
+## 🛠️ Setup Instructions
+
+### Prerequisites
+
+- Node.js v18+
+- MongoDB Atlas or local MongoDB
+- Firebase or GCP account
+- Twitter, Reddit, and LinkedIn API keys
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/dalvivishal/feed-credit-nexus.git
+cd community-hub
+
+# Install backend dependencies
+cd server
+npm install
+
+# Start backend server
+npm run dev
+
+# Install frontend dependencies
+cd ../client
+npm install
+
+# Start frontend development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🧪 Coming Soon
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/9a75977a-b5dc-46f4-8c74-53480437e9f1) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Unit & integration tests (Jest, Supertest)
+- Notifications system
+- In-app messaging
