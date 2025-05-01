@@ -108,17 +108,17 @@ README.md
 ```bash
 # Clone the repository
 git clone https://github.com/dalvivishal/feed-credit-nexus.git
-cd community-hub
+cd feed-credit-nexus
 
 # Install backend dependencies
-cd server
+cd backend
 npm install
 
 # Start backend server
-npm run dev
+nodemon server.js
 
 # Install frontend dependencies
-cd ../client
+cd ..
 npm install
 
 # Start frontend development server
