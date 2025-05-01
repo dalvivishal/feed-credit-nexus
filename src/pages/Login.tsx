@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { authService } from '@/lib/api';
 import { toast } from 'sonner';
+import api from '@/lib/apiService';
+import { getCookie, setCookie } from '@/lib/cookies';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,21 +17,23 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error('Please enter both email and password');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
-      await authService.login(email, password);
+      const response = await api.auth.login({ email, password });
+      setCookie("eduhub_token", response?.token);
+      setCookie("eduhub_user", JSON.stringify(response?.data?.user));
       toast.success('Login successful');
       navigate('/');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      toast.error('Invalid email or password');
+      toast.error(error.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -40,7 +43,7 @@ const Login = () => {
   const loginAs = async (role: 'user' | 'moderator' | 'admin') => {
     setLoading(true);
     try {
-      let email;
+      let email, password = 'Admin123!';
       switch (role) {
         case 'user':
           email = 'john@example.com';
@@ -52,11 +55,13 @@ const Login = () => {
           email = 'admin@example.com';
           break;
       }
-      await authService.login(email, 'password');
+      const response = await api.auth.login({ email, password });
+      setCookie("eduhub_token", response?.token);
+      setCookie("eduhub_user", JSON.stringify(response?.data?.user));
       toast.success(`Logged in as ${role}`);
       navigate('/');
-    } catch (error) {
-      toast.error('Login failed');
+    } catch (error: any) {
+      toast.error(error.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -73,7 +78,7 @@ const Login = () => {
             <span className="font-bold text-2xl">EduHub</span>
           </div>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Log in</CardTitle>
@@ -114,30 +119,30 @@ const Login = () => {
                 {loading ? 'Logging in...' : 'Log in'}
               </Button>
             </form>
-            
+
             {/* Demo mode quick login */}
             <div className="mt-6">
               <p className="text-sm text-muted-foreground text-center mb-2">Demo Mode - Quick Login</p>
               <div className="grid grid-cols-3 gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => loginAs('user')}
                   disabled={loading}
                 >
                   User
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => loginAs('moderator')}
                   disabled={loading}
                 >
                   Moderator
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => loginAs('admin')}
                   disabled={loading}
                 >

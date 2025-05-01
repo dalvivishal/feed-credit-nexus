@@ -23,5 +23,6 @@ router.use('/reports', moderatorAccess);
 router.get('/reports', adminController.getAllReports);
 router.patch('/reports/:id/resolve', adminController.resolveReport);
 router.get('/flagged-content', adminController.getFlaggedContent);
+router.get('/most-saved-posts', adminController.getMostSavedContent);
 
 module.exports = router;

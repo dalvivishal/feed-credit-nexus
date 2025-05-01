@@ -3,46 +3,89 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { contentService, ContentItem, authService } from '@/lib/api';
 import ContentCard from '@/components/ContentCard';
 import { Loader2 } from 'lucide-react';
+import api from '@/lib/apiService';
+import { toast } from 'sonner';
+
+interface ContentItem {
+  _id: string;
+  title: string;
+  description: string;
+  source: 'twitter' | 'reddit' | 'linkedin';
+  createdBy: {
+    username: string;
+    avatar?: string;
+  };
+  createdAt: string;
+  imageUrl?: string;
+  url: string;
+  tags: string[];
+  likes: number;
+  savedBy: string[];
+  flags: Array<{ userId: string; reason: string }>;
+}
 
 const Home = () => {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
-  const isAuthenticated = authService.isAuthenticated();
+  const isAuthenticated = api.auth.isAuthenticated();
+  const user = api.auth.getCurrentUser();
 
   useEffect(() => {
     if (!isAuthenticated) {
       // Show landing page for non-authenticated users
       return;
     }
-    
+
     const fetchContent = async () => {
       setLoading(true);
       try {
-        const sourceFilter = filter !== 'all' ? filter : undefined;
-        const data = await contentService.getContent(sourceFilter);
-        setContent(data);
-      } catch (error) {
+        const filters: Record<string, string> = {};
+
+        // Add filter if not "all"
+        if (filter !== 'all') {
+          if (['twitter', 'reddit', 'linkedin'].includes(filter)) {
+            filters.source = filter;
+          } else {
+            filters.tags = filter;
+          }
+        }
+
+        const data = await api.content.getAllContent(filters);
+
+        // Transform backend data to match our frontend component expectations
+        const transformedContent = data.map((item: ContentItem) => ({
+          ...item,
+          id: item._id, // Map backend _id to frontend id
+          author: item.createdBy?.username || 'Unknown',
+          timestamp: item.createdAt,
+          saved: user ? item.savedBy?.includes(user.id) : false,
+          flagged: item.flags?.length > 0
+        }));
+
+        setContent(transformedContent);
+      } catch (error: any) {
         console.error('Error fetching content:', error);
+        toast.error(error.message || 'Failed to load content');
       } finally {
         setLoading(false);
       }
     };
 
     fetchContent();
-  }, [filter, isAuthenticated]);
+  }, [filter, isAuthenticated, user?.id]);
 
-  const handleContentUpdate = (updatedItem: ContentItem) => {
-    setContent(prevContent => 
-      prevContent.map(item => item.id === updatedItem.id ? updatedItem : item)
+  const handleContentUpdate = (updatedItem: any) => {
+    setContent(prevContent =>
+      prevContent.map(item => item._id === updatedItem._id ? updatedItem : item)
     );
   };
 
   if (!isAuthenticated) {
+    // Landing page for non-authenticated users
     return (
       <div className="min-h-screen">
         {/* Hero Section */}
@@ -145,7 +188,7 @@ const Home = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {content.map((item) => (
-            <ContentCard key={item.id} item={item} onUpdate={handleContentUpdate} />
+            <ContentCard key={item._id} item={item} onUpdate={handleContentUpdate} />
           ))}
         </div>
       )}

@@ -1,32 +1,33 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Dialog,
-  DialogContent, 
+  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
-import { adminService, ContentItem, authService } from '@/lib/api';
+import { adminAPI, ContentItem, CreditTransaction } from '@/lib/services/adminService';
+import { authAPI } from '@/lib/services/authService';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -35,21 +36,21 @@ const AdminReports = () => {
   const [loading, setLoading] = useState(true);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  
+
   const navigate = useNavigate();
-  const isAuthorized = authService.isModerator();
-  
+  const isAuthorized = authAPI.isModerator();
+
   useEffect(() => {
     if (!isAuthorized) {
       toast.error("You don't have permission to access this page");
       navigate('/');
       return;
     }
-    
+
     const fetchFlaggedContent = async () => {
       setLoading(true);
       try {
-        const data = await adminService.getFlaggedContent();
+        const data = await adminAPI.getFlaggedContent();
         setFlaggedContent(data);
       } catch (error) {
         console.error('Error fetching flagged content:', error);
@@ -58,23 +59,23 @@ const AdminReports = () => {
         setLoading(false);
       }
     };
-    
+
     fetchFlaggedContent();
   }, [navigate, isAuthorized]);
-  
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     }).format(date);
   };
-  
+
   const handleApprove = async (contentId: string) => {
     try {
-      await adminService.resolveFlag(contentId, 'approve');
-      setFlaggedContent(prevContent => 
+      await adminAPI.resolveReport(contentId, { resolution: "Approve", action: 'restore' });
+      setFlaggedContent(prevContent =>
         prevContent.filter(item => item.id !== contentId)
       );
       toast.success('Content has been approved and flag resolved');
@@ -83,11 +84,11 @@ const AdminReports = () => {
       toast.error('Failed to approve content');
     }
   };
-  
+
   const handleRemove = async (contentId: string) => {
     try {
-      await adminService.resolveFlag(contentId, 'remove');
-      setFlaggedContent(prevContent => 
+      await adminAPI.resolveReport(contentId, { resolution: "Inappropriate", action: 'remove' });
+      setFlaggedContent(prevContent =>
         prevContent.filter(item => item.id !== contentId)
       );
       toast.success('Content has been removed');
@@ -96,16 +97,16 @@ const AdminReports = () => {
       toast.error('Failed to remove content');
     }
   };
-  
+
   const viewContent = (content: ContentItem) => {
     setSelectedContent(content);
     setViewDialogOpen(true);
   };
-  
+
   if (!isAuthorized) {
     return null; // Already handled in useEffect with redirect
   }
-  
+
   return (
     <div>
       <div className="mb-8">
@@ -114,7 +115,7 @@ const AdminReports = () => {
           Review and moderate content flagged by users
         </p>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Flagged Content</CardTitle>
@@ -149,8 +150,8 @@ const AdminReports = () => {
                       </TableCell>
                       <TableCell>{formatDate(content.timestamp)}</TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => viewContent(content)}
                         >
@@ -175,7 +176,7 @@ const AdminReports = () => {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Content Review Dialog */}
       {selectedContent && (
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
@@ -214,16 +215,16 @@ const AdminReports = () => {
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => handleApprove(selectedContent.id)}
                 className="flex items-center gap-2"
               >
                 <CheckCircle className="h-4 w-4" />
                 Approve Content
               </Button>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={() => handleRemove(selectedContent.id)}
                 className="flex items-center gap-2"
               >

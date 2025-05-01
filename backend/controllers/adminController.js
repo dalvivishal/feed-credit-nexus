@@ -12,46 +12,86 @@ exports.getDashboardStats = async (req, res, next) => {
     const activeUsers = await User.countDocuments({ status: 'active' });
     const moderators = await User.countDocuments({ role: 'moderator' });
     const admins = await User.countDocuments({ role: 'admin' });
-    
+
     // Get content statistics
     const totalContent = await Content.countDocuments();
     const activeContent = await Content.countDocuments({ status: 'active' });
     const flaggedContent = await Content.countDocuments({ status: 'flagged' });
-    
+
     // Get report statistics
     const pendingReports = await Report.countDocuments({ status: 'pending' });
     const resolvedReports = await Report.countDocuments({ status: 'resolved' });
-    
+
     // Get credit statistics
     const creditsAwarded = await Transaction.aggregate([
       { $match: { type: 'credit' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
-    
+
     const creditsSpent = await Transaction.aggregate([
       { $match: { type: 'debit' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
-    
+
     // Get recent user registrations
     const recentUsers = await User.find()
       .sort('-createdAt')
       .limit(5)
       .select('username email createdAt');
-    
+
     // Get recent transactions
     const recentTransactions = await Transaction.find()
       .sort('-createdAt')
       .limit(5)
       .populate('user', 'username');
-    
+
     // Get recent reports
     const recentReports = await Report.find()
       .sort('-createdAt')
       .limit(5)
       .populate('userId', 'username')
       .populate('contentId', 'title');
-    
+
+    const content = await Content.aggregate([
+      {
+        $addFields: {
+          savedCount: { $size: { $ifNull: ['$savedBy', []] } }
+        }
+      },
+      {
+        $sort: { savedCount: -1 }
+      },
+      {
+        $limit: 5
+      },
+      {
+        $project: {
+          title: 1,
+          source: 1,
+          savedCount: 1,
+          id: 1
+        }
+      }
+    ]);
+
+    const users = await User.aggregate([
+      {
+        $project: {
+          username: 1,
+          email: 1,
+          role: 1,
+          credits: 1,
+          id: 1,
+          avatar: 1
+        }
+      },
+      {
+        $sort: {
+          credits: -1
+        }
+      }
+    ]);
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -78,7 +118,9 @@ exports.getDashboardStats = async (req, res, next) => {
           users: recentUsers,
           transactions: recentTransactions,
           reports: recentReports
-        }
+        },
+        topSavedContent: content,
+        topUsers: users
       }
     });
   } catch (err) {
@@ -92,33 +134,33 @@ exports.getAllUsers = async (req, res, next) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
-    
+
     // Filter users based on query parameters
     const filter = {};
-    
+
     if (req.query.role) {
       filter.role = req.query.role;
     }
-    
+
     if (req.query.status) {
       filter.status = req.query.status;
     }
-    
+
     if (req.query.search) {
       filter.$or = [
         { username: { $regex: req.query.search, $options: 'i' } },
         { email: { $regex: req.query.search, $options: 'i' } }
       ];
     }
-    
+
     const users = await User.find(filter)
       .sort(req.query.sort || '-createdAt')
       .skip(skip)
       .limit(limit)
       .select('-password');
-    
+
     const total = await User.countDocuments(filter);
-    
+
     res.status(200).json({
       status: 'success',
       results: users.length,
@@ -135,14 +177,14 @@ exports.updateUserRole = async (req, res, next) => {
   try {
     const { role } = req.body;
     const { id } = req.params;
-    
+
     if (!['user', 'moderator', 'admin'].includes(role)) {
       return res.status(400).json({
         status: 'error',
         message: 'Invalid role'
       });
     }
-    
+
     const user = await User.findByIdAndUpdate(
       id,
       { role },
@@ -151,14 +193,14 @@ exports.updateUserRole = async (req, res, next) => {
         runValidators: true
       }
     );
-    
+
     if (!user) {
       return res.status(404).json({
         status: 'error',
         message: 'User not found'
       });
     }
-    
+
     res.status(200).json({
       status: 'success',
       data: { user }
@@ -173,14 +215,14 @@ exports.updateUserStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
     const { id } = req.params;
-    
+
     if (!['active', 'suspended', 'banned'].includes(status)) {
       return res.status(400).json({
         status: 'error',
         message: 'Invalid status'
       });
     }
-    
+
     const user = await User.findByIdAndUpdate(
       id,
       { status },
@@ -189,14 +231,14 @@ exports.updateUserStatus = async (req, res, next) => {
         runValidators: true
       }
     );
-    
+
     if (!user) {
       return res.status(404).json({
         status: 'error',
         message: 'User not found'
       });
     }
-    
+
     res.status(200).json({
       status: 'success',
       data: { user }
@@ -211,28 +253,28 @@ exports.adjustUserCredits = async (req, res, next) => {
   try {
     const { amount, reason } = req.body;
     const { id } = req.params;
-    
+
     if (!amount || !reason) {
       return res.status(400).json({
         status: 'error',
         message: 'Please provide amount and reason'
       });
     }
-    
+
     const user = await User.findById(id);
-    
+
     if (!user) {
       return res.status(404).json({
         status: 'error',
         message: 'User not found'
       });
     }
-    
+
     // Update credits
     user.credits += parseInt(amount);
     if (user.credits < 0) user.credits = 0; // Prevent negative credits
     await user.save();
-    
+
     // Create transaction record
     await Transaction.create({
       user: id,
@@ -241,7 +283,7 @@ exports.adjustUserCredits = async (req, res, next) => {
       description: reason,
       reference: 'admin_adjustment'
     });
-    
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -261,18 +303,18 @@ exports.getAllReports = async (req, res, next) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
-    
+
     // Filter reports based on query parameters
     const filter = {};
-    
+
     if (req.query.status) {
       filter.status = req.query.status;
     }
-    
+
     if (req.query.reportType) {
       filter.reportType = req.query.reportType;
     }
-    
+
     const reports = await Report.find(filter)
       .sort('-createdAt')
       .skip(skip)
@@ -280,9 +322,9 @@ exports.getAllReports = async (req, res, next) => {
       .populate('userId', 'username')
       .populate('contentId', 'title description status')
       .populate('resolvedBy', 'username');
-    
+
     const total = await Report.countDocuments(filter);
-    
+
     res.status(200).json({
       status: 'success',
       results: reports.length,
@@ -299,41 +341,41 @@ exports.resolveReport = async (req, res, next) => {
   try {
     const { resolution, action } = req.body;
     const { id } = req.params;
-    
+
     if (!resolution || !action) {
       return res.status(400).json({
         status: 'error',
         message: 'Please provide resolution and action'
       });
     }
-    
+
     const report = await Report.findById(id);
-    
+
     if (!report) {
       return res.status(404).json({
         status: 'error',
         message: 'Report not found'
       });
     }
-    
+
     if (report.status !== 'pending') {
       return res.status(400).json({
         status: 'error',
         message: 'Report already processed'
       });
     }
-    
+
     // Update report status
     report.status = 'resolved';
     report.resolution = resolution;
     report.resolvedBy = req.user.id;
     report.resolvedAt = Date.now();
     await report.save();
-    
+
     // Handle content based on action
     if (report.contentId) {
       const content = await Content.findById(report.contentId);
-      
+
       if (content) {
         if (action === 'remove') {
           content.status = 'removed';
@@ -344,7 +386,7 @@ exports.resolveReport = async (req, res, next) => {
         }
       }
     }
-    
+
     res.status(200).json({
       status: 'success',
       data: { report }
@@ -360,20 +402,54 @@ exports.getFlaggedContent = async (req, res, next) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
-    
+
     const content = await Content.find({ status: 'flagged' })
       .sort('-createdAt')
       .skip(skip)
       .limit(limit)
       .populate('createdBy', 'username')
       .populate('flags.userId', 'username');
-    
+
     const total = await Content.countDocuments({ status: 'flagged' });
-    
+
     res.status(200).json({
       status: 'success',
       results: content.length,
       total,
+      data: { content }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+exports.getMostSavedContent = async (req, res, next) => {
+  try {
+    const content = await Content.aggregate([
+      {
+        $addFields: {
+          savedCount: { $size: { $ifNull: ['$savedBy', []] } }
+        }
+      },
+      {
+        $sort: { savedCount: -1 }
+      },
+      {
+        $limit: 5
+      },
+      {
+        $project: {
+          title: 1,
+          source: 1,
+          savedCount: 1
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      results: content.length,
       data: { content }
     });
   } catch (err) {

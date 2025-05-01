@@ -44,9 +44,9 @@ app.use(express.json({ limit: '10kb' }));
 
 // CORS
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'https://yourdomain.com' 
-    : 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production'
+    ? '*'
+    : '*',
   credentials: true
 }));
 

@@ -1,280 +1,228 @@
 
-import React, { useEffect, useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { creditService, CreditTransaction } from '@/lib/api';
-import { Loader2, ArrowUp, ArrowDown, Plus, Minus } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/apiService';
+import { Loader2, Coins, ArrowDown, ArrowUp } from 'lucide-react';
 
 const Credits = () => {
   const [credits, setCredits] = useState(0);
-  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [spendDialogOpen, setSpendDialogOpen] = useState(false);
-  
+  const [transactionFilter, setTransactionFilter] = useState('all');
+
   useEffect(() => {
     const fetchCreditsData = async () => {
+      setLoading(true);
       try {
-        const [creditsData, transactionsData] = await Promise.all([
-          creditService.getUserCredits(),
-          creditService.getTransactionHistory()
-        ]);
-        
-        setCredits(creditsData);
-        setTransactions(transactionsData);
-      } catch (error) {
+        // Get user's credit balance
+        const creditBalance = await api.credits.getBalance();
+        setCredits(creditBalance);
+
+        // Get transaction history
+        const type = transactionFilter !== 'all' ? transactionFilter : undefined;
+        const transactionsData = await api.credits.getTransactionHistory(1, 50, type);
+        setTransactions(transactionsData.data.transactions);
+      } catch (error: any) {
         console.error('Error fetching credits data:', error);
-        toast.error('Failed to load credits information');
+        toast.error(error.message || 'Failed to load credit information');
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchCreditsData();
-  }, []);
-  
+  }, [transactionFilter]);
+
+  const handleClaimDailyBonus = async () => {
+    try {
+      const result = await api.credits.claimDailyBonus();
+      setCredits(result.newBalance);
+
+      // Refresh transaction history
+      const transactionsData = await api.credits.getTransactionHistory(1, 50);
+      setTransactions(transactionsData.data.transactions);
+
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to claim daily bonus');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric'
+      hour: '2-digit',
+      minute: '2-digit'
     }).format(date);
   };
-  
-  const renderTransactionIcon = (type: 'earned' | 'spent') => {
-    if (type === 'earned') {
-      return <Plus className="h-4 w-4 text-green-500" />;
-    }
-    return <Minus className="h-4 w-4 text-red-500" />;
-  };
-  
-  // Mock function to spend credits on premium features
-  const spendCreditsOn = async (item: string, amount: number) => {
-    try {
-      if (credits < amount) {
-        toast.error('Insufficient credits');
-        return;
-      }
-      
-      await creditService.spendCredits(amount, `Purchased ${item}`);
-      
-      // Refresh data
-      const [newCredits, newTransactions] = await Promise.all([
-        creditService.getUserCredits(),
-        creditService.getTransactionHistory()
-      ]);
-      
-      setCredits(newCredits);
-      setTransactions(newTransactions);
-      
-      toast.success(`Successfully purchased ${item}`);
-    } catch (error) {
-      toast.error('Failed to process the purchase');
-    }
-  };
-  
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
+
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Credit Center</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Credits & Transactions</h1>
         <p className="text-muted-foreground mt-2">
-          Manage your credits and view transaction history
+          Manage your credits and view your transaction history
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Credit Balance Card */}
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Current Balance</CardDescription>
-            <CardTitle className="text-4xl font-bold text-primary">
-              {credits} <span className="text-sm text-muted-foreground">credits</span>
-            </CardTitle>
+            <CardTitle className="text-lg">Current Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Use credits to unlock premium content and features
+            <div className="flex items-center">
+              <Coins className="h-8 w-8 text-yellow-500 mr-3" />
+              <span className="text-3xl font-bold">
+                {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : credits}
+              </span>
+            </div>
+            <p className="text-muted-foreground text-sm mt-2">
+              Use credits to unlock premium features
             </p>
           </CardContent>
         </Card>
-        
+
+        {/* Daily Bonus Card */}
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>How to Earn Credits</CardDescription>
+            <CardTitle className="text-lg">Daily Bonus</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4">Claim your daily bonus to earn free credits</p>
+            <Button onClick={handleClaimDailyBonus} disabled={loading}>
+              Claim Daily Bonus
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* How to Earn Card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">How to Earn</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <Badge variant="outline">+5</Badge>
-                <span>Save content for later</span>
+              <li className="flex justify-between">
+                <span>Daily login bonus</span>
+                <Badge>+25 credits</Badge>
               </li>
-              <li className="flex items-center gap-2">
-                <Badge variant="outline">+10</Badge>
-                <span>Watch educational content</span>
+              <li className="flex justify-between">
+                <span>Save content</span>
+                <Badge>+5 credits</Badge>
               </li>
-              <li className="flex items-center gap-2">
-                <Badge variant="outline">+15</Badge>
-                <span>Share content with others</span>
+              <li className="flex justify-between">
+                <span>Share content</span>
+                <Badge>+10 credits</Badge>
+              </li>
+              <li className="flex justify-between">
+                <span>Create content</span>
+                <Badge>+20 credits</Badge>
               </li>
             </ul>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Premium Features</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge>50</Badge>
-                  <span className="text-sm">Advanced Course</span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => spendCreditsOn('Advanced Course', 50)}>
-                  Redeem
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge>75</Badge>
-                  <span className="text-sm">Expert Webinar Access</span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => spendCreditsOn('Expert Webinar Access', 75)}>
-                  Redeem
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge>100</Badge>
-                  <span className="text-sm">1-on-1 Mentoring Session</span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => spendCreditsOn('1-on-1 Mentoring Session', 100)}>
-                  Redeem
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
-      
+
+      {/* Transaction History */}
       <Card>
         <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>
-            View your recent credit transactions
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Transaction History</CardTitle>
+              <CardDescription>Your recent credit transactions</CardDescription>
+            </div>
+            <Select value={transactionFilter} onValueChange={setTransactionFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All transactions</SelectItem>
+                <SelectItem value="credit">Credits earned</SelectItem>
+                <SelectItem value="debit">Credits spent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all">
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="earned">Earned</TabsTrigger>
-              <TabsTrigger value="spent">Spent</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all">
-              <TransactionTable 
-                transactions={transactions} 
-                formatDate={formatDate} 
-                renderTransactionIcon={renderTransactionIcon} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="earned">
-              <TransactionTable 
-                transactions={transactions.filter(t => t.type === 'earned')} 
-                formatDate={formatDate} 
-                renderTransactionIcon={renderTransactionIcon} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="spent">
-              <TransactionTable 
-                transactions={transactions.filter(t => t.type === 'spent')} 
-                formatDate={formatDate} 
-                renderTransactionIcon={renderTransactionIcon} 
-              />
-            </TabsContent>
-          </Tabs>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : transactions.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((transaction) => (
+                    <TableRow key={transaction._id}>
+                      <TableCell className="font-medium">
+                        {formatDate(transaction.createdAt)}
+                      </TableCell>
+                      <TableCell>{transaction.description}</TableCell>
+                      <TableCell className="text-right">
+                        <span className={`flex items-center justify-end ${
+                          transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {transaction.type === 'credit' ? (
+                            <ArrowUp className="h-4 w-4 mr-1" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4 mr-1" />
+                          )}
+                          {transaction.amount}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+                <Coins className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium">No transactions yet</h3>
+              <p className="text-muted-foreground mt-2">
+                Your transaction history will appear here
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
-    </div>
-  );
-};
-
-interface TransactionTableProps {
-  transactions: CreditTransaction[];
-  formatDate: (date: string) => string;
-  renderTransactionIcon: (type: 'earned' | 'spent') => React.ReactNode;
-}
-
-const TransactionTable: React.FC<TransactionTableProps> = ({ 
-  transactions, 
-  formatDate, 
-  renderTransactionIcon 
-}) => {
-  if (transactions.length === 0) {
-    return <p className="text-center text-muted-foreground py-8">No transactions found</p>;
-  }
-  
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Date & Time</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.map(transaction => (
-            <TableRow key={transaction.id}>
-              <TableCell className="font-medium">{formatDate(transaction.timestamp)}</TableCell>
-              <TableCell>{transaction.reason}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  {renderTransactionIcon(transaction.type)}
-                  <span className="capitalize">{transaction.type}</span>
-                </div>
-              </TableCell>
-              <TableCell className={`text-right ${
-                transaction.type === 'earned' ? 'text-green-500' : 'text-red-500'
-              }`}>
-                {transaction.type === 'earned' ? '+' : '-'}{transaction.amount}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
     </div>
   );
 };

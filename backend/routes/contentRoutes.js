@@ -5,12 +5,10 @@ const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Public routes
-router.get('/', contentController.getAllContent);
-router.get('/:id', contentController.getContent);
-
 // Protected routes
 router.use(protect);
+router.get('/', contentController.getAllContent);
+router.get('/:id', contentController.getContent);
 router.post('/', contentController.createContent);
 router.post('/:id/save', contentController.saveContent);
 router.delete('/:id/unsave', contentController.unsaveContent);

@@ -12,7 +12,7 @@ const signToken = id => {
 // Send response with token
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
-  
+
   // Remove password from output
   user.password = undefined;
 
@@ -29,14 +29,14 @@ exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { username }] 
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }]
     });
-    
+
     if (existingUser) {
       return res.status(400).json({
         status: 'error',
-        message: existingUser.email === email ? 
+        message: existingUser.email === email ?
           'Email already in use' : 'Username already taken'
       });
     }
@@ -49,7 +49,7 @@ exports.signup = async (req, res, next) => {
       credits: 100 // Initial credits for new users
     });
 
-    createSendToken(newUser, 201, res);
+    createSendToken(newUser, 200, res);
   } catch (err) {
     next(err);
   }
@@ -64,12 +64,14 @@ exports.login = async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({
         status: 'error',
-        message: 'Please provide email and password'
+        message: 'Please provide email/username and password'
       });
     }
 
     // Check if user exists && password is correct
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({
+      $or: [{ email }, { username: email }]
+    }).select('+password');
 
     if (!user || !(await user.correctPassword(password, user.password))) {
       return res.status(401).json({
@@ -111,7 +113,7 @@ exports.getMe = async (req, res, next) => {
 exports.updatePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     // Get user from collection
     const user = await User.findById(req.user.id).select('+password');
 

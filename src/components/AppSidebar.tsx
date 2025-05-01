@@ -14,7 +14,7 @@ import {
   SidebarFooter
 } from "@/components/ui/sidebar";
 import { Home, User, Coins, MessageSquare, Bell, Settings, Flag } from "lucide-react";
-import { authService } from "@/lib/api";
+import { authAPI } from "@/lib/services/authService";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,9 @@ import { Badge } from "@/components/ui/badge";
 
 const AppSidebar = () => {
   const location = useLocation();
-  const user = authService.getCurrentUser();
-  const isAdmin = authService.isAdmin();
-  const isModerator = authService.isModerator();
+  const user = authAPI.getCurrentUser();
+  const isAdmin = authAPI.isAdmin();
+  const isModerator = authAPI.isModerator();
 
   const menuItems = [
     {
@@ -79,7 +79,7 @@ const AppSidebar = () => {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
+                  <SidebarMenuButton
                     asChild
                     isActive={location.pathname === item.url}
                   >
@@ -101,7 +101,7 @@ const AppSidebar = () => {
               <SidebarMenu>
                 {modMenuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
+                    <SidebarMenuButton
                       asChild
                       isActive={location.pathname === item.url}
                     >
@@ -129,7 +129,7 @@ const AppSidebar = () => {
               <SidebarMenu>
                 {adminMenuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
+                    <SidebarMenuButton
                       asChild
                       isActive={location.pathname === item.url}
                     >
@@ -164,11 +164,11 @@ const AppSidebar = () => {
                 <Coins className="h-4 w-4 text-yellow-600 mr-1.5" />
                 <span className="text-sm font-medium">{user.credits}</span>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
-                  authService.logout().then(() => {
+                  authAPI.logout().then(() => {
                     window.location.href = "/login";
                   });
                 }}

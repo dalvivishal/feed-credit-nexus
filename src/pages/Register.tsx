@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { authService } from '@/lib/api';
 import { toast } from 'sonner';
+import api from '@/lib/apiService';
+import { getCookie, setCookie } from '@/lib/cookies';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -18,27 +20,29 @@ const Register = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!username || !email || !password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
     }
-    
+
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
-    
+
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters long');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
-      await authService.register(username, email, password);
+      const response = await api.auth.register({ email, username, password });
+      setCookie("eduhub_token", response?.data?.token);
+      setCookie("eduhub_user", response?.data?.user);
       toast.success('Registration successful! Welcome to EduHub.');
       navigate('/');
     } catch (error: any) {
@@ -60,7 +64,7 @@ const Register = () => {
             <span className="font-bold text-2xl">EduHub</span>
           </div>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Create an account</CardTitle>

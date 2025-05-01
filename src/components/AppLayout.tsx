@@ -5,12 +5,12 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import Navbar from "./Navbar";
-import { authService } from "@/lib/api";
+import authAPI from "@/lib/services/authService";
 
 const AppLayout = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const isAuthenticated = authService.isAuthenticated();
+  const isAuthenticated = authAPI.isAuthenticated();
 
   useEffect(() => {
     // Simulate loading
@@ -20,6 +20,13 @@ const AppLayout = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Handler for mobile navigation (close sidebar)
+  const handleNavItemClick = () => {
+    // This function will be passed to Navbar
+    // to handle mobile navigation item clicks
+    // This is needed to close the sidebar on mobile
+  };
 
   if (loading) {
     return (
@@ -38,7 +45,7 @@ const AppLayout = () => {
         <div className="min-h-screen flex w-full">
           {isAuthenticated && <AppSidebar />}
           <main className="flex-1 flex flex-col min-h-screen">
-            <Navbar />
+            <Navbar onNavItemClick={handleNavItemClick} />
             <div className="flex-1 container py-8 max-w-7xl">
               <Outlet />
             </div>

@@ -1,24 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Users, Flag, Award, User } from 'lucide-react';
-import { adminService, authService } from '@/lib/api';
+import { authAPI } from '@/lib/services/authService';
+import { adminAPI } from '@/lib/services/adminService';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -26,21 +27,21 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const AdminDashboard = () => {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const navigate = useNavigate();
-  const isAdmin = authService.isAdmin();
-  
+  const isAdmin = authAPI.isAdmin();
+
   useEffect(() => {
     if (!isAdmin) {
       toast.error("You don't have permission to access this page");
       navigate('/');
       return;
     }
-    
+
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const data = await adminService.getUserStats();
+        const data = await adminAPI.getUserStats();
         setStats(data);
       } catch (error) {
         console.error('Error fetching admin stats:', error);
@@ -49,14 +50,14 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-    
+
     fetchStats();
   }, [navigate, isAdmin]);
-  
+
   if (!isAdmin) {
     return null; // Already handled in useEffect with redirect
   }
-  
+
   if (loading || !stats) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -64,7 +65,7 @@ const AdminDashboard = () => {
       </div>
     );
   }
-  
+
   // Dummy chart data
   const activityData = [
     { name: 'Mon', users: 120, content: 15 },
@@ -75,7 +76,7 @@ const AdminDashboard = () => {
     { name: 'Sat', users: 220, content: 35 },
     { name: 'Sun', users: 200, content: 28 },
   ];
-  
+
   return (
     <div>
       <div className="mb-8">
@@ -84,7 +85,7 @@ const AdminDashboard = () => {
           Monitor platform activity and manage users
         </p>
       </div>
-      
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -135,7 +136,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <Card className="col-span-1 md:col-span-2">
           <CardHeader>
@@ -156,7 +157,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
@@ -173,8 +174,8 @@ const AdminDashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stats.mostActiveUsers.map((user: any) => (
-                  <TableRow key={user.id}>
+                {stats.mostActiveUsers && stats.mostActiveUsers?.map((user: any) => (
+                  <TableRow key={user._id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -197,7 +198,7 @@ const AdminDashboard = () => {
             </Table>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Most Saved Content</CardTitle>
@@ -213,13 +214,13 @@ const AdminDashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stats.topSavedContent.map((content: any) => (
-                  <TableRow key={content.id}>
+                {stats.topSavedContent && stats.topSavedContent.map((content: any) => (
+                  <TableRow key={content._id}>
                     <TableCell className="font-medium">{content.title}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{content.source}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">{content.likes}</TableCell>
+                    <TableCell className="text-right">{content.savedCount}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

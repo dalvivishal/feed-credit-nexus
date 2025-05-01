@@ -105,14 +105,14 @@ const importData = async () => {
     await Content.deleteMany();
     await Transaction.deleteMany();
     await Report.deleteMany();
-    
+
     console.log('Data cleared...');
 
     // Create users
     const adminPassword = await bcrypt.hash('admin123', 12);
     const moderatorPassword = await bcrypt.hash('moderator123', 12);
     const userPassword = await bcrypt.hash('user123', 12);
-    
+
     const admin = await User.create({
       username: 'admin',
       email: 'admin@example.com',
@@ -121,7 +121,7 @@ const importData = async () => {
       credits: 1000,
       avatar: 'https://i.pravatar.cc/150?img=1'
     });
-    
+
     const moderator = await User.create({
       username: 'jane',
       email: 'jane@example.com',
@@ -130,7 +130,7 @@ const importData = async () => {
       credits: 500,
       avatar: 'https://i.pravatar.cc/150?img=2'
     });
-    
+
     const user = await User.create({
       username: 'john',
       email: 'john@example.com',
@@ -141,23 +141,23 @@ const importData = async () => {
     });
 
     console.log('Users created...');
-    
+
     // Create content
     const createdContent = await Promise.all(
       contentData.map(async (content, index) => {
         // Alternate between users
-        const creator = index % 3 === 0 ? admin._id : 
+        const creator = index % 3 === 0 ? admin._id :
                         index % 3 === 1 ? moderator._id : user._id;
-        
+
         return await Content.create({
           ...content,
           createdBy: creator
         });
       })
     );
-    
+
     console.log('Content created...');
-    
+
     // Create some transactions
     const transactions = [
       {
@@ -197,20 +197,20 @@ const importData = async () => {
         reference: 'admin_adjustment'
       }
     ];
-    
+
     await Transaction.create(transactions);
     console.log('Transactions created...');
-    
+
     // Save some content for users
     const firstContent = await Content.findById(createdContent[0]._id);
     firstContent.savedBy.push(user._id);
     await firstContent.save();
-    
+
     const secondContent = await Content.findById(createdContent[1]._id);
     secondContent.savedBy.push(user._id);
     secondContent.savedBy.push(moderator._id);
     await secondContent.save();
-    
+
     // Create a report
     await Report.create({
       contentId: createdContent[2]._id,
@@ -219,9 +219,9 @@ const importData = async () => {
       description: 'This content contains incorrect information about Node.js versions',
       status: 'pending'
     });
-    
+
     console.log('Reports created...');
-    
+
     console.log('Data Import Success');
     process.exit();
   } catch (err) {
@@ -237,7 +237,7 @@ const destroyData = async () => {
     await Content.deleteMany();
     await Transaction.deleteMany();
     await Report.deleteMany();
-    
+
     console.log('Data Destroyed');
     process.exit();
   } catch (err) {
