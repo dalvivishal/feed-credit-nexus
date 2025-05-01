@@ -57,8 +57,6 @@ const Profile = () => {
       setLoading(true);
       try {
         const data = await api.content.getSavedContent();
-
-        console.log("content", data);
         // Transform data to match our component expectations
         const transformedContent = data.map((item: any) => ({
           ...item,

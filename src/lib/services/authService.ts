@@ -49,8 +49,6 @@ export const authAPI = {
       const data = await handleResponse(response);
 
       // Store token and user data in cookies
-
-      console.log("logindata", data);
       setCookie("eduhub_token", data?.token);
       setCookie("eduhub_user", JSON.stringify(data?.data?.user));
 
