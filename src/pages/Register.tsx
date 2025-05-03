@@ -42,7 +42,7 @@ const Register = () => {
     try {
       const response = await api.auth.register({ email, username, password });
       setCookie("eduhub_token", response?.data?.token);
-      setCookie("eduhub_user", response?.data?.user);
+      setCookie("eduhub_user", JSON.stringify(response?.data?.user));
       toast.success('Registration successful! Welcome to EduHub.');
       navigate('/');
     } catch (error: any) {
