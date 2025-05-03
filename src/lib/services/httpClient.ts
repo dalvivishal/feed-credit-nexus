@@ -1,7 +1,7 @@
 import { getCookie } from "../cookies";
 
 // Common HTTP client utilities for making API requests
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "https://feed-credit-nexus.onrender.com/api";
 
 // Helper to handle API responses
 export const handleResponse = async (response: Response) => {
