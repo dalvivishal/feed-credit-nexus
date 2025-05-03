@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { getCookie, setCookie, removeCookie } from "../cookies";
 
 // Set the base URL for API requests
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "https://feed-credit-nexus.onrender.com/api";
 const token = getCookie("eduhub_token");
 
 // Helper to handle API responses
