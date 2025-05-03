@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 
 // Core components
 import AppLayout from './components/AppLayout';
-import AuthGuard from './components/authGuard';
+import AuthGuard from './components/AuthGuard';
 
 // Pages
 import Index from './pages/Index';

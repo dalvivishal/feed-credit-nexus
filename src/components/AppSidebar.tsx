@@ -49,7 +49,7 @@ const AppSidebar = () => {
       title: "Reports & Flags",
       url: "/admin/reports",
       icon: Flag,
-      badge: 4, // Mock badge count
+      badge: 0,
     },
   ];
 
@@ -108,7 +108,7 @@ const AppSidebar = () => {
                       <Link to={item.url} className="flex items-center">
                         <item.icon className="mr-2 h-5 w-5" />
                         <span>{item.title}</span>
-                        {item.badge && (
+                        {item?.badge > 0 && (
                           <Badge variant="destructive" className="ml-auto">
                             {item.badge}
                           </Badge>
